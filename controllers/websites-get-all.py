@@ -10,14 +10,18 @@ def handler(event, context):
 
     print(event)
     print(context)
+    try:
 
-    response = table.scan()
-    items = response['Items']
-    print(items)
+        response = table.scan()
+        items = response['Items']
+        print(items)
 
-    response = {
-        "statusCode": 200,
-        "body": json.dumps({"items": items})
-    }
+        response = {
+            "statusCode": 200,
+            "body": json.dumps({"items": items})
+        }
 
-    return response
+        return response
+
+    except Exception as err:
+        print(f'Error occurred: {err}')

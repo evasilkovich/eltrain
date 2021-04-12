@@ -8,27 +8,29 @@ client = boto3.client('stepfunctions')
 def handler(event, context):
 
     print(event)
-    print(context)
-    print(event['pathParameters'])
-    print(event['pathParameters']['job_id'])
 
-    job_id = event['pathParameters']['job_id']
-    result = client.describe_execution(
-        executionArn=job_id
-    )
+    try:
 
-    start_d = result['startDate'].isoformat()
-    stop_d = result['stopDate'].isoformat()
-    print(start_d)
-    print(stop_d)
-    result.update({'startDate':start_d})
-    result.update({'stopDate':stop_d})
+        job_id = event['pathParameters']['job_id']
+        result = client.describe_execution(
+            executionArn=job_id
+        )
 
-    print(result)
+        start_d = result['startDate'].isoformat()
+        stop_d = result['stopDate'].isoformat()
+        print(start_d)
+        print(stop_d)
+        result.update({'startDate':start_d})
+        result.update({'stopDate':stop_d})
 
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(result)
-    }
+        print(result)
 
-    return response
+        response = {
+            "statusCode": 200,
+            "body": json.dumps(result)
+        }
+
+        return response
+
+    except Exception as err:
+        print(f'Error occurred: {err}')
