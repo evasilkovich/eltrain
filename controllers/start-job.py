@@ -13,6 +13,12 @@ def handler(event, context):
     print(os.environ.get('ELTRAIN_STEP_FUNCTIONS'))
     body = json.loads(event["body"])
     print(body)
+    if not body or not body['sites']:
+        response = {
+            "statusCode": 400,
+            "body": json.dumps({'message':'empty payload'})
+        }
+        return response
 
     result = client.start_execution(
         stateMachineArn=os.environ.get('ELTRAIN_STEP_FUNCTIONS'),

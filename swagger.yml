@@ -35,6 +35,10 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/jobs_resp"
+        "400":
+          description: "empty payload"
+          schema:
+            $ref: "#/definitions/jobs_resp_empty"
 
     get:
       tags:
@@ -125,6 +129,13 @@ definitions:
     properties:
       executionArn:
         type: "string"
+
+  jobs_resp_empty:
+    type: "object"
+    properties:
+      message:
+        type: "string"
+
   jobs_resp_all:
     type: "object"
     properties:
