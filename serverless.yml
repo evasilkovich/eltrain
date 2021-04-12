@@ -125,6 +125,13 @@ functions:
           path: /websites/{domain_name}
           method: get
 
+  catch-webhook:
+    handler: controllers/catch_webhook.handler
+    events:
+      - http:
+          path: /webhook
+          method: post
+
 
   parse-link:
     handler: functions/parse-link.handler
@@ -134,6 +141,21 @@ functions:
     handler: functions/get-tweets.handler
   save-to-db:
     handler: functions/save-to-db.handler
+  send-webhook:
+    handler: functions/send-webhook.handler
+    environment:
+      WEBHOOK_URL:
+        !Join
+        - ''
+        - - 'https://'
+          - !Ref ApiGatewayRestApi
+          - '.execute-api.'
+          - ${opt:region, self:provider.region}
+          - '.amazonaws.com/'
+          - ${opt:stage, self:provider.stage}
+          - '/webhook'
+
+
 
 
 resources:

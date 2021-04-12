@@ -68,7 +68,10 @@ eltrainStepFuncs:
               End: true
 
       FinalState:
-        Type: Pass
+        Type: Task
+        Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-send-webhook"
+        Parameters:
+          "execution.$": "$$.Execution.Id"
         End: true
 
 
