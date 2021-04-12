@@ -1,0 +1,74 @@
+eltrainStepFuncs:
+  name: EltrainMachine-${opt:stage, 'dev'}
+  id: EltrainStateMachine
+  definition:
+    Comment: "This is a state machine to get RSS"
+    StartAt: HandleSites
+    States:
+      HandleSites:
+        Type: Map
+        ItemsPath: "$.sites"
+        Parameters:
+          "site.$": "$$.Map.Item.Value"
+        MaxConcurrency: 0
+        Next: FinalState
+        Iterator:
+          StartAt: ParseText
+          States:
+            ParseText:
+              Type: Task
+              Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-parse-link"
+              ResultPath: "$.type"
+              Next: ChoiceTypeOfRequest
+
+
+            ChoiceTypeOfRequest:
+              Type: Choice
+              Choices:
+                -
+                  Variable: "$.type"
+                  StringEquals: "RSS"
+                  Next: GetRSS
+
+                -
+                  Variable: "$.type"
+                  StringEquals: "Twitter"
+                  Next: GetTweets
+              Default: EmptyPayload
+
+            GetRSS:
+              Type: Task
+              Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-get-rss"
+              ResultPath: "$.site_response"
+              Next: SaveToDB
+
+
+            GetTweets:
+              Type: Task
+              Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-get-tweets"
+              ResultPath: "$.site_response"
+              Next: SaveToDB
+
+            SaveToDB:
+              Type: Task
+              Resource: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-save-to-db"
+              Parameters:
+                "execution.$": "$$.Execution.Id"
+                "site_response.$": "$.site_response"
+              ResultPath: "$.saved_to_db"
+              Next: LastState
+
+
+            EmptyPayload:
+              Type: Pass
+              Next: LastState
+
+            LastState:
+              Type: Pass
+              End: true
+
+      FinalState:
+        Type: Pass
+        End: true
+
+

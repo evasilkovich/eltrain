@@ -1,0 +1,189 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: eltrain
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: '2'
+plugins:
+  - serverless-python-requirements
+  - serverless-step-functions
+  - serverless-pseudo-parameters
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+  yamlStage: ${opt:stage, 'dev'}
+  deletionPolicy: Retain
+  stateMachinesFile: ./serverless.stateMachines.yml
+
+
+provider:
+  name: aws
+  runtime: python3.7
+  lambdaHashingVersion: 20201221
+  region: eu-central-1
+  stage: ${self:custom.yamlStage}
+
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - states:StartExecution
+        - states:DescribeExecution
+        - states:ListExecutions
+      Resource:
+        - "*"
+    -
+      Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:Query
+        - dynamodb:Scan
+
+      Resource:
+        - { "Fn::GetAtt": ["JobsDynamoDBTable", "Arn" ] }
+
+    -
+      Effect: Allow
+      Action:
+        - dynamodb:Query
+
+      Resource:
+         Fn::Join:
+           - ''
+           -
+             - "Fn::GetAtt": ["JobsDynamoDBTable", "Arn" ]
+             - '/index/CreatedDateIndex'
+
+
+# you can define service wide environment variables here
+  environment:
+    ELTRAIN_JOBS_TABLE: eltrain-jobs-table
+    ELTRAIN_STEP_FUNCTIONS: arn:aws:states:#{AWS::Region}:#{AWS::AccountId}:stateMachine:EltrainMachine-${opt:stage, 'dev'}
+
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
+
+functions:
+
+  start-step-func:
+    handler: controllers/start-job.handler
+    events:
+      - http:
+          path: /jobs
+          method: post
+
+  jobs-get-all:
+    handler: controllers/jobs-get-all.handler
+    events:
+      - http:
+          path: /jobs
+          method: get
+
+  jobs-get-one:
+    handler: controllers/jobs-get-one.handler
+    events:
+      - http:
+          path: /jobs/{job_id}
+          method: get
+
+  websites-get-all:
+    handler: controllers/websites-get-all.handler
+    events:
+      - http:
+          path: /websites
+          method: get
+
+  websites-get-one:
+    handler: controllers/websites-get-one.handler
+    events:
+      - http:
+          path: /websites/{domain_name}
+          method: get
+
+
+  parse-link:
+    handler: functions/parse-link.handler
+  get-rss:
+    handler: functions/get-rss.handler
+  get-tweets:
+    handler: functions/get-tweets.handler
+  save-to-db:
+    handler: functions/save-to-db.handler
+
+
+resources:
+  Resources:
+    JobsDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: ${self:custom.deletionPolicy}
+      Properties:
+
+        AttributeDefinitions:
+          -
+            AttributeName: domain_name
+            AttributeType: S
+          -
+            AttributeName: created_date
+            AttributeType: S
+          -
+            AttributeName: execution_name
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: execution_name
+            KeyType: HASH
+          -
+            AttributeName: domain_name
+            KeyType: RANGE
+
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        TableName: ${self:provider.environment.ELTRAIN_JOBS_TABLE}
+
+        GlobalSecondaryIndexes:
+          - IndexName: CreatedDateIndex
+            KeySchema:
+              - AttributeName: domain_name
+                KeyType: HASH
+              -
+                AttributeName: created_date
+                KeyType: RANGE
+
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+
+stepFunctions:
+  stateMachines: ${file(${self:custom.stateMachinesFile})}

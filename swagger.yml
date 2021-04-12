@@ -1,0 +1,183 @@
+swagger: "2.0"
+info:
+  description: ""
+  version: "1.0.0"
+  title: "Eltrain"
+
+tags:
+  - name: "jobs"
+    description: "Everything about jobs"
+  - name: "websites"
+    description: "Everything about websites"
+
+schemes:
+  - "https"
+  - "http"
+paths:
+  /jobs:
+    post:
+      tags:
+        - "jobs"
+      operationId: "startStepFunc"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: ""
+          required: true
+          schema:
+            $ref: "#/definitions/jobs"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/jobs_resp"
+
+    get:
+      tags:
+        - "jobs"
+      operationId: "getAllJobs"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/jobs_resp_all"
+
+  /jobs/{job_id}:
+    get:
+      tags:
+        - "jobs"
+      operationId: "getOneJob"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "job_id"
+          in: "path"
+          description: "ID of job to get"
+          required: true
+          type: "string"
+
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/jobs_resp_one"
+
+  /wibsites:
+    get:
+      tags:
+        - "wibsites"
+      operationId: "getAllWebsites"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/wibsites_resp_all"
+
+  /wibsites/{domain_name}:
+    get:
+      tags:
+        - "wibsites"
+      operationId: "getOneWebsite"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - name: "domain_name"
+          in: "path"
+          description: "url of  website to get"
+          required: true
+          type: "string"
+
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/wibsites_resp_one"
+
+
+definitions:
+  jobs:
+    type: "object"
+    properties:
+      sites:
+        type: "array"
+        items:
+          type: "string"
+  jobs_resp:
+    type: "object"
+    properties:
+      executionArn:
+        type: "string"
+  jobs_resp_all:
+    type: "object"
+    properties:
+      executions:
+        type: array
+        items:
+          $ref: "#/definitions/execution"
+  execution:
+    type: "object"
+
+  jobs_resp_one:
+    type: "object"
+    properties:
+      executionArn:
+        type: "string"
+      stateMachineArn:
+        type: "string"
+      name:
+        type: "string"
+      status:
+        type: "string"
+      startDate:
+        type: "string"
+      stopDate:
+        type: "string"
+      input:
+        type: "string"
+      inputDetails:
+        type: "object"
+      output:
+        type: "string"
+      ResponseMetadata:
+        type: "object"
+
+  wibsites_resp_all:
+    type: "object"
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/website_item"
+
+  website_item:
+    type: "object"
+
+  wibsites_resp_one:
+    type: "object"
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/website_one_item"
+
+  website_one_item:
+    type: "object"
+
